@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	R "github.com/andreasstrack/gogogo/reflect"
+	R "github.com/andreasstrack/util/reflect"
 	"io"
 	"reflect"
 )
