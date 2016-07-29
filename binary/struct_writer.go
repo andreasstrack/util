@@ -4,19 +4,26 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	R "github.com/andreasstrack/util/reflect"
 	"io"
 	"reflect"
+
+	R "github.com/andreasstrack/util/reflect"
 )
 
+// WriteStructBigEndian does a binary serizaling from the struct represented
+// by s to w. It will write the data in BigEndian byte order.
 func WriteStructBigEndian(s interface{}, w io.Writer) error {
 	return WriteStruct(s, w, binary.BigEndian)
 }
 
+// WriteStructLittleEndian does a binary serizaling from the struct represented
+// by s to w. It will write the data in LittleEndian byte order.
 func WriteStructLittleEndian(s interface{}, w io.Writer) error {
 	return WriteStruct(s, w, binary.LittleEndian)
 }
 
+// WriteStruct does a binary serizaling from the struct represented
+// by s to w. It will write the data the format specified by o.
 func WriteStruct(s interface{}, w io.Writer, o binary.ByteOrder) error {
 	if !R.IsStruct(s) {
 		return errors.New("WriteStruct(): s must be a struct.")
@@ -27,7 +34,7 @@ func WriteStruct(s interface{}, w io.Writer, o binary.ByteOrder) error {
 	for i := range fields {
 		v := fields[i]
 		if !v.CanInterface() {
-			return errors.New(fmt.Sprintf("Value %s cannot be interfaced.", v))
+			return fmt.Errorf("Value %s cannot be interfaced.", v)
 		}
 
 		if err := writeValue(v, w, o); err != nil {
@@ -39,10 +46,6 @@ func WriteStruct(s interface{}, w io.Writer, o binary.ByteOrder) error {
 }
 
 func writeValue(v reflect.Value, w io.Writer, o binary.ByteOrder) error {
-	if v.Kind() == reflect.Ptr {
-		return errors.New(fmt.Sprintf("Value %s must not be a pointer."))
-	}
-
 	switch v.Kind() {
 	case reflect.Int8:
 	case reflect.Uint8:
@@ -59,7 +62,7 @@ func writeValue(v reflect.Value, w io.Writer, o binary.ByteOrder) error {
 
 	default:
 		fmt.Printf("Invalid value kind: %s\n", v.Kind())
-		return errors.New(fmt.Sprintf("writeValue(): Invalid value kind: %s\n", v.Kind()))
+		return fmt.Errorf("writeValue(): Invalid value kind: %s\n", v.Kind())
 	}
 
 	return binary.Write(w, o, v.Addr().Interface())

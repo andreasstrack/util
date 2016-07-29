@@ -1,9 +1,10 @@
 package reflect
 
 import (
-	T "github.com/andreasstrack/gogogo/testing"
 	"reflect"
 	"testing"
+
+	T "github.com/andreasstrack/util/testing"
 )
 
 type A struct {
@@ -13,8 +14,8 @@ type A struct {
 }
 
 type B struct {
-	W bool "tag1"
-	A "tag2"
+	W bool "foo"
+	A "bar"
 }
 
 func TestGetAllFields(t *testing.T) {
@@ -64,9 +65,9 @@ func TestGetAllAddressableFields(t *testing.T) {
 func TestGetAddressableFieldsWithTag(t *testing.T) {
 	b := B{W: true, A: A{I: 2, F: 3.14, S: "hello"}}
 
-	allFields := GetAddressableFieldsWithTag(b, "tag1")
+	allFields := GetAddressableFieldsWithTag(b, "foo")
 	T.Assert(len(allFields) == 0, "len(allFields) == 0: %v", t, allFields)
 
-	allFields = GetAddressableFieldsWithTag(&b, "tag1")
+	allFields = GetAddressableFieldsWithTag(&b, "bar")
 	T.Assert(len(allFields) == 1, "len(allFields) == 1: %v", t, allFields)
 }

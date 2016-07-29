@@ -8,10 +8,10 @@ func TestGetBitsFromByte(t *testing.T) {
 	b := byte(0xF5)
 
 	if GetBitsFromByte(b, 0, 4) != 5 {
-		t.Errorf("TestGetBitsFromByte() does not work correctly (b = %#02x).\n", b)
+		t.Errorf("GetBitsFromByte() does not work correctly (b = %#02x).\n", b)
 	}
 	if GetBitsFromByte(b, 4, 4) != 15 {
-		t.Errorf("TestGetBitsFromByte() does not work correctly (b = %#02x).\n", b)
+		t.Errorf("GetBitsFromByte() does not work correctly (b = %#02x).\n", b)
 	}
 	if GetBitsFromByte(b, 2, 4) != 13 {
 		t.Errorf("GetBitsFromByte() does not work correctly (b = %#02x).\n", b)

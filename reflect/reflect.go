@@ -1,15 +1,20 @@
+// Package reflect provides utility functions for reflecting
+// on go types that add further functionality to the built-in
+// reflect package.
 package reflect
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 )
 
+// GetAllFields returns:
+// - all fields if i represents a struct
+// - the value of i if i does not represent a struct
 func GetAllFields(i interface{}) []reflect.Value {
-	iv := GetReferenceValue(i)
+	iv := GetElementValue(i)
 
-	result := make([]reflect.Value, 0)
+	var result []reflect.Value
 	if iv.Kind() != reflect.Struct {
 		result = append(result, iv)
 		return result
@@ -23,10 +28,15 @@ func GetAllFields(i interface{}) []reflect.Value {
 	return result
 }
 
+// GetAllAddressableFields returns:
+// - all addressable fields if i represents a struct
+// - the value of i if i does not represent a struct and
+//   its value is addressable
+// TODO: Implement using GetAllFields
 func GetAllAddressableFields(i interface{}) []reflect.Value {
-	result := make([]reflect.Value, 0)
+	var result []reflect.Value
 
-	iv := GetReferenceValue(i)
+	iv := GetElementValue(i)
 	if !iv.CanAddr() {
 		return result
 	}
@@ -46,11 +56,36 @@ func GetAllAddressableFields(i interface{}) []reflect.Value {
 	return result
 }
 
-func GetAddressableFieldsWithTag(i interface{}, tag reflect.StructTag) []reflect.Value {
-	result := make([]reflect.Value, 0)
+// GetFieldsWithTag returns all fields of i (cf. GetAllFields),
+// which are tagged with tag.
+func GetFieldsWithTag(i interface{}, tag reflect.StructTag) []reflect.Value {
+	var result []reflect.Value
 
-	iv := GetReferenceValue(i)
-	it := GetReferenceType(i)
+	iv := GetElementValue(i)
+	it := GetElementType(i)
+
+	if iv.Kind() != reflect.Struct {
+		return result
+	}
+
+	for j := 0; j < iv.NumField(); j++ {
+		f := it.Field(j)
+
+		if f.Tag == tag {
+			result = append(result, iv.Field(j))
+		}
+	}
+
+	return result
+}
+
+// GetAddressableFieldsWithTag returns all addressable fields of i (cf. GetAllAddressableFields),
+// which are tagged with tag.
+func GetAddressableFieldsWithTag(i interface{}, tag reflect.StructTag) []reflect.Value {
+	var result []reflect.Value
+
+	iv := GetElementValue(i)
+	it := GetElementType(i)
 
 	if iv.Kind() != reflect.Struct || !iv.CanAddr() {
 		fmt.Printf("No result for: %v (kind: %s)\n", iv, iv.Kind())
@@ -68,66 +103,62 @@ func GetAddressableFieldsWithTag(i interface{}, tag reflect.StructTag) []reflect
 	return result
 }
 
-func GetFieldsWithTag(i interface{}, tag reflect.StructTag) []reflect.Value {
-	result := make([]reflect.Value, 0)
-
-	iv := GetReferenceValue(i)
-	it := GetReferenceType(i)
-
-	if iv.Kind() != reflect.Struct {
-		return result
-	}
-
-	for j := 0; j < iv.NumField(); j++ {
-		f := it.Field(j)
-
-		if f.Tag == tag {
-			result = append(result, iv.Field(j))
-		}
-	}
-
-	return result
-}
-
+// IsPointer returns whether i represents a pointer value or not.
 func IsPointer(i interface{}) bool {
 	return reflect.ValueOf(i).Kind() == reflect.Ptr
 }
 
-func GetReferenceValue(i interface{}) reflect.Value {
+// GetElementValue returns:
+// - The value of i if i does not represent a pointer.
+// - The element value of i if i represents a pointer.
+func GetElementValue(i interface{}) reflect.Value {
 	v := reflect.ValueOf(i)
 
 	if v.Kind() == reflect.Ptr {
 		return v.Elem()
-	} else {
-		return v
 	}
+
+	return v
 }
 
-func GetReferenceType(i interface{}) reflect.Type {
-	return GetReferenceValue(i).Type()
+// GetElementType returns the type of the element value
+// provided by GetElementValue
+func GetElementType(i interface{}) reflect.Type {
+	return GetElementValue(i).Type()
 }
 
+// IsStruct returns:
+// - True if i represents a struct or a pointer to a struct
+// - False otherwise
 func IsStruct(i interface{}) bool {
 	var v reflect.Value
 
-	if v = GetReferenceValue(i); v.Kind() == reflect.Invalid {
+	if v = GetElementValue(i); v.Kind() == reflect.Invalid {
 		return false
 	}
 
 	return v.Kind() == reflect.Struct
 }
 
+// HasField returns:
+// - True if IsStruct(i) is true and the struct referred
+//   to by i has a field named name.
+// - False otherwise
 func HasField(i interface{}, name string) bool {
 	if !IsStruct(i) {
 		return false
 	}
 
-	return GetReferenceValue(i).FieldByName(name).Kind() != reflect.Invalid
+	return GetElementValue(i).FieldByName(name).Kind() != reflect.Invalid
 }
 
+// GetFieldOfType looks up a field in i of the same type as t.
+// It returns:
+// - The first field in i of type t if one is found.
+// - An invalid value otherwise.
 func GetFieldOfType(i interface{}, t interface{}) reflect.Value {
-	v := GetReferenceValue(i)
-	tv := GetReferenceValue(t)
+	v := GetElementValue(i)
+	tv := GetElementValue(t)
 	for j := 0; j < v.NumField(); j++ {
 		f := v.Field(j)
 		if f.Type() == tv.Type() {
@@ -138,59 +169,59 @@ func GetFieldOfType(i interface{}, t interface{}) reflect.Value {
 	return reflect.Value{}
 }
 
+// HasFieldOfType returns true if GetFieldOfType returns a valid
+// valid and false otherwise.
 func HasFieldOfType(i interface{}, t interface{}) bool {
 	return GetFieldOfType(i, t).Kind() != reflect.Invalid
 }
 
+// CopyStruct performs a deep copy of the struct represented by
+// from to the struct represented by to.
+// Note that to must refer to a pointer to a struct for it to be addressable and thus setable.
 func CopyStruct(from interface{}, to interface{}) error {
-	vFrom := reflect.ValueOf(from)
-	vTo := reflect.ValueOf(to)
+	fromValue := GetElementValue(from)
+	toValue := GetElementValue(to)
 
-	if vFrom.Kind() == reflect.Ptr {
-		vFrom = vFrom.Elem()
+	if fromValue.Kind() != reflect.Struct ||
+		toValue.Kind() != reflect.Struct {
+		return fmt.Errorf("Need to structs, got %v (from) and %v (to)", from, to)
 	}
 
-	if vTo.Kind() == reflect.Ptr {
-		vTo = vTo.Elem()
-	}
-
-	fmt.Printf("From: %s\nTo:%s\n", vFrom.Kind().String(), vTo.Kind().String())
-
-	nFieldsFrom := vFrom.NumField()
-	nFieldsTo := vTo.NumField()
+	nFieldsFrom := fromValue.NumField()
+	nFieldsTo := toValue.NumField()
 
 	if nFieldsFrom != nFieldsTo {
-		return errors.New("Types of from and to do not match.")
+		return fmt.Errorf("Number of fields in from (%d) does not match number of fields in to (%d)", nFieldsFrom, nFieldsTo)
 	}
 
 	for i := 0; i < nFieldsFrom; i++ {
-		fFrom := vFrom.Field(i)
-		fTo := vTo.Field(i)
+		fromField := fromValue.Field(i)
+		toField := toValue.Field(i)
 
-		kFrom := fFrom.Kind()
-		kTo := fTo.Kind()
+		fromFieldKind := fromField.Kind()
+		toFieldKind := toField.Kind()
 
-		if kFrom != kTo {
-			return errors.New("Fields for from and to do not match.")
+		if fromFieldKind != toFieldKind {
+			return fmt.Errorf("Field for from (%v) and to (%v) do not match", fromField, toField)
 		}
 
-		switch kFrom {
+		switch fromFieldKind {
 		case reflect.Int:
-			fTo.SetInt(fFrom.Int())
+			toField.SetInt(fromField.Int())
 			break
 		case reflect.Float32:
 		case reflect.Float64:
-			fTo.SetFloat(fFrom.Float())
+			toField.SetFloat(fromField.Float())
 			break
 		case reflect.Complex64:
 		case reflect.Complex128:
-			fTo.SetComplex(fFrom.Complex())
+			toField.SetComplex(fromField.Complex())
 			break
 		case reflect.String:
-			fTo.SetString(fFrom.String())
+			toField.SetString(fromField.String())
 			break
 		default:
-			return errors.New("Invalid kind of field.")
+			return fmt.Errorf("Invalid kind of field: %s", fromFieldKind)
 		}
 	}
 
