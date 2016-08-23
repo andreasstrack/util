@@ -12,13 +12,9 @@ import (
 // in arg. Otherwise it will add an error to t containing the same format-
 // printed message.
 func Assert(condition bool, message string, t *testing.T, arg ...interface{}) {
-	if condition {
-		if len(arg) > 0 {
-			fmt.Printf("Correct: "+message+"\n", arg)
-		} else {
-			fmt.Printf("Correct: " + message + "\n")
-		}
-	} else {
-		t.Errorf(message, arg)
+	if !condition {
+		t.Errorf(message, arg...)
 	}
+
+	fmt.Printf("Correct: "+message+"\n", arg...)
 }

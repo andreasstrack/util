@@ -7,19 +7,9 @@ import (
 	T "github.com/andreasstrack/util/testing"
 )
 
-type A struct {
-	I int
-	F float32
-	S string
-}
-
-type B struct {
-	W bool "foo"
-	A "bar"
-}
 
 func TestGetAllFields(t *testing.T) {
-	b := B{W: true, A: A{I: 2, F: 3.14, S: "hello"}}
+	b := RB{W: true, RA: RA{I: 2, F: 3.14, S: "hello"}}
 
 	allFields := GetAllFields(b)
 
@@ -39,7 +29,7 @@ func TestGetAllFields(t *testing.T) {
 }
 
 func TestGetAllAddressableFields(t *testing.T) {
-	b := B{W: true, A: A{I: 2, F: 3.14, S: "hello"}}
+	b := RB{W: true, RA: RA{I: 2, F: 3.14, S: "hello"}}
 
 	allFields := GetAllAddressableFields(&b)
 
@@ -63,7 +53,7 @@ func TestGetAllAddressableFields(t *testing.T) {
 }
 
 func TestGetAddressableFieldsWithTag(t *testing.T) {
-	b := B{W: true, A: A{I: 2, F: 3.14, S: "hello"}}
+	b := RB{W: true, RA: RA{I: 2, F: 3.14, S: "hello"}}
 
 	allFields := GetAddressableFieldsWithTag(b, "foo")
 	T.Assert(len(allFields) == 0, "len(allFields) == 0: %v", t, allFields)

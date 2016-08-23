@@ -9,7 +9,9 @@ import (
 )
 
 // GetAllFields returns:
-// - all fields if i represents a struct
+//
+// - all fields if i represents a struct, in a deep fashion
+//
 // - the value of i if i does not represent a struct
 func GetAllFields(i interface{}) []reflect.Value {
 	iv := GetElementValue(i)
@@ -29,10 +31,13 @@ func GetAllFields(i interface{}) []reflect.Value {
 }
 
 // GetAllAddressableFields returns:
-// - all addressable fields if i represents a struct
+//
+// - all addressable fields if i represents a struct, in a deep fashion
+//
 // - the value of i if i does not represent a struct and
 //   its value is addressable
-// TODO: Implement using GetAllFields
+//
+// - no value if i is not addressable
 func GetAllAddressableFields(i interface{}) []reflect.Value {
 	var result []reflect.Value
 
@@ -103,6 +108,19 @@ func GetAddressableFieldsWithTag(i interface{}, tag reflect.StructTag) []reflect
 	return result
 }
 
+// GetAllValues will return all values found within i.
+// It will return the result of GetAllFields plus the
+// value of i, if i is a struct.
+func GetAllValues(i interface{}) []reflect.Value {
+	var result []reflect.Value
+	if GetElementType(i).Kind() == reflect.Struct {
+		result = append(result, reflect.ValueOf(i))
+	}
+	result = append(result, GetAllFields(i)...)
+
+	return result
+}
+
 // IsPointer returns whether i represents a pointer value or not.
 func IsPointer(i interface{}) bool {
 	return reflect.ValueOf(i).Kind() == reflect.Ptr
@@ -150,29 +168,6 @@ func HasField(i interface{}, name string) bool {
 	}
 
 	return GetElementValue(i).FieldByName(name).Kind() != reflect.Invalid
-}
-
-// GetFieldOfType looks up a field in i of the same type as t.
-// It returns:
-// - The first field in i of type t if one is found.
-// - An invalid value otherwise.
-func GetFieldOfType(i interface{}, t interface{}) reflect.Value {
-	v := GetElementValue(i)
-	tv := GetElementValue(t)
-	for j := 0; j < v.NumField(); j++ {
-		f := v.Field(j)
-		if f.Type() == tv.Type() {
-			return f
-		}
-	}
-
-	return reflect.Value{}
-}
-
-// HasFieldOfType returns true if GetFieldOfType returns a valid
-// valid and false otherwise.
-func HasFieldOfType(i interface{}, t interface{}) bool {
-	return GetFieldOfType(i, t).Kind() != reflect.Invalid
 }
 
 // CopyStruct performs a deep copy of the struct represented by
