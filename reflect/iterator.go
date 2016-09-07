@@ -2,7 +2,9 @@ package reflect
 
 import (
 	"fmt"
+	"reflect"
 
+	"github.com/andreasstrack/datastructures/tree"
 	"github.com/andreasstrack/util"
 	"github.com/andreasstrack/util/patterns"
 )
@@ -14,47 +16,81 @@ const (
 	FlagForceCanInterface
 	// FlagIsPointer - Find only pointer values.
 	FlagIsPointer
-	// FlagHasTag - Find only values with a tag.
-	FlagHasTag
 )
 
 type valueIterator struct {
-	flags   util.Flags
-	tree    *valueNode
-	current *valueNode
-	nextNodeStrategy
+	flags util.Flags
+	tree.NodeIterator
 }
 
 // NewValueIterator generates an iterator returning values of i
 // as specified by the flags.
-func NewValueIterator(i interface{}, flags util.Flags, searchStrategy util.SearchStrategy) (patterns.Iterator, error) {
-	var err error
-	vi := valueIterator{flags: flags, tree: nil, current: nil}
-	if vi.tree, err = buildValueTree(i, flags); err != nil {
-		return nil, fmt.Errorf("could not generate value tree for iterator: %s", err.Error())
-	}
-	vi.current = vi.tree
-	switch searchStrategy {
-	case util.DepthFirstSearch:
-		vi.nextNodeStrategy = nextNodeDepthFirstStrategy{}
-	case util.BreadtFirstSearch:
-		vi.nextNodeStrategy = nextNodeBreadthFirstStrategy{}
-	default:
-		return nil, fmt.Errorf("invalid search strategy: %d", searchStrategy)
-	}
+func NewValueIterator(i interface{}, flags util.Flags) (patterns.Iterator, error) {
+	vi := valueIterator{flags: flags}
+	vi.NodeIterator = *tree.NewNodeIterator(interfaceToValueNode(i), NewValueBuildingChildIterator, tree.BreadthFirst)
 	return &vi, nil
 }
 
-func (vi *valueIterator) Next() interface{} {
-	if !vi.HasNext() {
-		return nil
-	}
-
-	result := vi.current.value.Interface()
-	vi.current = vi.nextNodeStrategy.nextNode(vi.current)
-	return result
+type valueBuildingChildIterator struct {
+	parent     tree.Node
+	next       tree.Node
+	fieldIndex int
+	v          reflect.Value
 }
 
-func (vi *valueIterator) HasNext() bool {
-	return vi.current != nil
+func interfaceToValueNode(i interface{}) tree.Node {
+	v := reflect.ValueOf(i)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	return tree.NewNode(v)
+}
+
+func NewValueBuildingChildIterator(n tree.Node) tree.ChildIterator {
+	fmt.Printf("NewValueBuildingChildIterator( %s )\n", tree.String(n))
+	ci := &valueBuildingChildIterator{}
+	ci.Init(n)
+	return ci
+}
+
+func (vbci *valueBuildingChildIterator) Init(n tree.Node) {
+	v := n.GetValue().Interface().(reflect.Value)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	if v.Kind() != reflect.Struct {
+		vbci.parent = nil
+		vbci.next = nil
+		return
+	}
+	vbci.parent = n
+	vbci.v = v
+	vbci.fieldIndex = 0
+	vbci.getNext()
+}
+
+func (vbci *valueBuildingChildIterator) getNext() {
+	if vbci.parent == nil {
+		vbci.next = nil
+		return
+	}
+	if vbci.v.Kind() != reflect.Struct {
+		vbci.next = nil
+		return
+	}
+	if vbci.fieldIndex >= vbci.v.NumField() {
+		vbci.next = nil
+		return
+	}
+	vbci.next = tree.NewNode(vbci.v.Field(vbci.fieldIndex))
+}
+
+func (vbci *valueBuildingChildIterator) HasNext() bool {
+	return vbci.next != nil
+}
+
+func (vbci *valueBuildingChildIterator) Next() interface{} {
+	result := vbci.next
+	vbci.getNext()
+	return result
 }
