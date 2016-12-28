@@ -7,43 +7,38 @@ import (
 	"testing"
 )
 
+// T is a wrapper for testing.T, providing
+// assertion functions.
 type T struct {
 	t *testing.T
 }
 
+// NewT creates a new instance of T, which wraps t.
 func NewT(t *testing.T) *T {
-	return &T{t: t}
+	return &T{t}
 }
 
+// Assert performs Assert(...) on the testing.T wrapped by t.
 func (t *T) Assert(condition bool, message string, arg ...interface{}) {
 	Assert(condition, message, t.t, arg)
 }
 
-func (t *T) AssertEquals(expected, actual interface{}, description string, arg ...interface{}) {
-	if expected != actual {
-		t.t.Errorf("%s: expected != actual ('%s' != '%s')", fmt.Sprintf(description, arg...), expected, actual)
-		t.t.FailNow()
-	}
-
-	fmt.Printf("%s: expected == actual ('%s' == '%s')\n", fmt.Sprintf(description, arg...), expected, actual)
+// AssertEquals compares v1 and v2 and performs Assert(...) on the testing.T wrapped by t with the
+// result of this comparison.
+func (t *T) AssertEquals(v1 interface{}, v2 interface{}, message string, arg ...interface{}) {
+	Assert(v1 == v2, fmt.Sprintf("Expected: %v, Actual: %v (%s)", v1, v2, message), t.t, arg)
 }
 
-func (t *T) AssertError(err error, description string, arg ...interface{}) {
-	if err == nil {
-		t.t.Errorf("%s: expected an error", fmt.Sprintf(description, arg...))
-		t.t.FailNow()
-	}
-
-	fmt.Printf("%s: correctly received error '%s'\n", fmt.Sprintf(description, arg...), err.Error())
+// AssertError performs Assert(...) on the testing.T wrapped by t,
+// testing err for not being nil.
+func (t *T) AssertError(err error, message string, arg ...interface{}) {
+	Assert(nil != err, message, t.t, arg)
 }
 
-func (t *T) AssertNoError(err error, description string, arg ...interface{}) {
-	if err != nil {
-		t.t.Errorf("%s: unexpected error '%s'", fmt.Sprintf(description, arg...), err.Error())
-		t.t.FailNow()
-	}
-
-	fmt.Printf("%s: correctly received no error\n", fmt.Sprintf(description, arg...))
+// AssertNoError performs Assert(...) on the testing.T wrapped by t,
+// testing err for being nil.
+func (t *T) AssertNoError(err error, message string, arg ...interface{}) {
+	Assert(nil == err, message, t.t, arg)
 }
 
 // Assert tests a condition occuring during a test t for being true.

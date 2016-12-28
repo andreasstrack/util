@@ -17,38 +17,46 @@ type C struct {
 
 // AB is a composition of A and B.
 type AB struct {
-	A
-	B
+	a A
+	b B
 }
 
 // AC is a composition of A and C.
 type AC struct {
-	A
-	C
+	a A
+	c C
 }
 
 // BC is a composition of B and C.
 type BC struct {
-	B
-	C
+	b B "out"
+	c C "in"
 }
 
 // ABBC is a composition of AB and BC.
 type ABBC struct {
-	AB
-	BC
+	ab AB
+	bc BC
+}
+
+func newAb() *AB {
+	return &AB{
+		a: A{AI: 1},
+		b: B{BI: 2},
+	}
+}
+
+func newBc() *BC {
+	return &BC{
+		b: B{BI: 3},
+		c: C{CI: 4},
+	}
 }
 
 func newAbbc() *ABBC {
 	return &ABBC{
-		AB: AB{
-			A: A{AI: 1},
-			B: B{BI: 2},
-		},
-		BC: BC{
-			B: B{BI: 3},
-			C: C{CI: 4},
-		},
+		ab: *newAb(),
+		bc: *newBc(),
 	}
 }
 
