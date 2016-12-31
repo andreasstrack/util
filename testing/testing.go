@@ -27,25 +27,25 @@ func NewVerboseT(t *testing.T) *T {
 
 // Assert performs Assert(...) on the testing.T wrapped by t.
 func (t *T) Assert(condition bool, message string, arg ...interface{}) {
-	Assert(condition, message, t, arg)
+	Assert(condition, message, t, arg...)
 }
 
 // AssertEquals compares v1 and v2 and performs Assert(...) on the testing.T wrapped by t with the
 // result of this comparison.
-func (t *T) AssertEquals(v1 interface{}, v2 interface{}, message string, arg ...interface{}) {
-	Assert(v1 == v2, fmt.Sprintf("Expected: %v, Actual: %v (%s)", v1, v2, message), t, arg)
+func (t *T) AssertEquals(expected interface{}, actual interface{}, message string, arg ...interface{}) {
+	Assert(expected == actual, fmt.Sprintf("Expected: %v, Actual: %v (%s)", expected, actual, message), t, arg...)
 }
 
 // AssertError performs Assert(...) on the testing.T wrapped by t,
 // testing err for not being nil.
 func (t *T) AssertError(err error, message string, arg ...interface{}) {
-	Assert(nil != err, message, t, arg)
+	Assert(nil != err, message, t, arg...)
 }
 
 // AssertNoError performs Assert(...) on the testing.T wrapped by t,
 // testing err for being nil.
 func (t *T) AssertNoError(err error, message string, arg ...interface{}) {
-	Assert(nil == err, message, t, arg)
+	Assert(nil == err, message, t, arg...)
 }
 
 // Assert tests a condition occuring during a test t for being true.

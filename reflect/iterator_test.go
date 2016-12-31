@@ -1,22 +1,23 @@
 package reflect
 
 import (
-	"fmt"
 	"testing"
 
+	"github.com/andreasstrack/datastructures"
 	"github.com/andreasstrack/datastructures/tree"
 	"github.com/andreasstrack/util"
+	T "github.com/andreasstrack/util/testing"
 )
 
-func TestSimpleValueTreeGeneration(t *testing.T) {
-	s := &A{AI: 1}
-	ni, err := NewValueIterator(s, 0)
-	if err != nil {
-		t.Error(err.Error())
-	}
+func TestSimpleValueIteration(t *testing.T) {
+	tt := T.NewT(t)
+	s := newAb()
+	ni, err := NewValueIterator(s, 0, tree.BreadthFirst)
+	tt.AssertNoError(err, "NewValueIterator for %s", s)
+
 	for ni.HasNext() {
-		n := ni.Next().(tree.Node)
-		fmt.Printf("Next: %s\n", tree.String(n))
+		n := ni.Next()
+		tt.Assert(n != nil, "next node: %s", n)
 	}
 }
 
@@ -34,58 +35,97 @@ func TestSimpleValueTreeGeneration(t *testing.T) {
 
 // 	fmt.Printf("%s\n", vn.String())
 
-// 	if vn.size() != 11 {
+//	if vn.size() != 11 {
 // 		t.Errorf("size of value tree (%d) is not 11.", vn.size())
 // )
 
-func TestIterationWithTag(t *testing.T) {
-	// tt := T.NewT(t)
-	s := *newBc()
-	// flags := FlagHasTag
+func TestBreadthFirstTraversal(t *testing.T) {
+	tt := T.NewT(t)
+	s := *newAbii()
 	flags := util.FlagNone
-	root := newValueNodeFromInterface(s, nil)
-	fmt.Printf("Constructing iterator from root '%s'\n", root)
-	it := tree.NewValidatedNodeIterator(
-		root,
-		func(n tree.Node) tree.ChildIterator {
-			nvci := newValueChildIterator(flags)
-			nvci.Init(n)
-			return nvci
-		},
-		tree.BreadthFirst,
-		NewNodeValidator(flags))
-
+	it, err := NewValueIterator(s, flags, tree.BreadthFirst)
+	tt.AssertNoError(err, "NewValueIterator(%s,%s)", s, flags)
+	var expectedNodeValues = [...]int64{3, 4, 1, 2, 6, 5}
+	i := 0
 	for it.HasNext() {
-		fmt.Printf("About to call Next()...\n")
-		nodeInterface := it.Next()
-		if nodeInterface == nil {
-			t.Errorf("Next: nil\n")
-			return
+		nextValue := it.Next().(tree.Node).GetValue()
+		if nextValue.IsInt() {
+			tt.AssertEquals(expectedNodeValues[i], nextValue.Int(), "next Int value")
+			i++
 		}
-		node := it.Next().(tree.Node)
-		fmt.Printf("\n-----\nNext: %s\n-----\n", node)
-		// vn := node.(*ValueNode)
-		// if vn.structField.Tag == "" {
-		// 	t.Errorf("%s does not have a tag.", node)
-		// }
 	}
+	tt.AssertEquals(len(expectedNodeValues), i, "number of Ints")
+	next := it.Next()
+	tt.Assert(nil == next, "it.Next() == nil (%s)", next)
 }
 
-// func TestTagIteration(t *testing.T) {
-// 	// tt := T.NewT(t)
-// 	s := newAb()
-// 	flags := FlagHasTag
-// 	root := newValueNodeFromInterface(s, nil)
-// 	fmt.Printf("Constructing iterator from root '%s'\n", root)
-// 	it := tree.NewNodeIterator(
-// 		root,
-// 		func(n tree.Node) tree.ChildIterator {
-// 			nvci := newValueChildIterator(flags)
-// 			nvci.Init(n)
-// 			return nvci
-// 		},
-// 		tree.BreadthFirst)
-// 	for it.HasNext() {
-// 		fmt.Printf("Next: %s\n", it.Next())
-// 	}
-// }
+func TestDepthFirstTraversal(t *testing.T) {
+	tt := T.NewT(t)
+	s := *newAbii()
+	flags := util.FlagNone
+	it, err := NewValueIterator(s, flags, tree.DepthFirst)
+	tt.AssertNoError(err, "NewValueIterator(%s,%s)", s, flags)
+	var expectedNodeValues = [...]int64{1, 5, 6, 2, 3, 4}
+	i := 0
+	for i < len(expectedNodeValues) && it.HasNext() {
+		nextValue := it.Next().(tree.Node).GetValue()
+		if nextValue.IsInt() {
+			tt.AssertEquals(expectedNodeValues[i], nextValue.Int(), "next Int value")
+			i++
+		}
+	}
+	tt.AssertEquals(len(expectedNodeValues), i, "number of Ints")
+	next := it.Next()
+	tt.Assert(nil == next, "it.Next() == nil (%s)", next)
+}
+
+func TestTraversalWithTags(t *testing.T) {
+	tt := T.NewT(t)
+	s := *newAbbc()
+	flags := FlagHasTag
+	it, err := NewValueIterator(s, flags, tree.BreadthFirst)
+	tt.AssertNoError(err, "NewValueIterator for %s", s)
+	for it.HasNext() {
+		next := it.Next()
+		tt.Assert(next != nil, "it.Next() != nil (%s)", next)
+		nextValue := next.(*ValueNode)
+		tags := nextValue.tags
+		tt.Assert(len(tags) > 0, "nextValue %s has tag: %s", nextValue.GetValue().Interface(), tags)
+	}
+	next := it.Next()
+	tt.Assert(nil == next, "it.Next() == nil (%s)", next)
+}
+
+func TestTraversalOfSimpleData(t *testing.T) {
+	tt := T.NewT(t)
+	s := *newAbbc()
+	flags := FlagIsSimpleData
+	it, err := NewValueIterator(s, flags, tree.BreadthFirst)
+	tt.AssertNoError(err, "NewValueIterator for %s", s)
+	for it.HasNext() {
+		next := it.Next()
+		tt.Assert(next != nil, "it.Next() != nil (%s)", next)
+		nextValue := next.(*ValueNode)
+		tt.Assert(datastructures.IsSimpleData(nextValue), "nextValue is simple data: %s", nextValue.GetValue())
+	}
+	next := it.Next()
+	tt.Assert(nil == next, "it.Next() == nil (%s)", next)
+}
+
+func TestTraversalOfSimpleDataWithTags(t *testing.T) {
+	tt := T.NewVerboseT(t)
+	s := *newAbbc()
+	flags := FlagIsSimpleData | FlagHasTag
+	it, err := NewValueIterator(s, flags, tree.BreadthFirst)
+	tt.AssertNoError(err, "NewValueIterator for %s", s)
+	for it.HasNext() {
+		next := it.Next()
+		tt.Assert(next != nil, "it.Next() != nil (%s)", next)
+		nextValue := next.(*ValueNode)
+		tt.Assert(datastructures.IsSimpleData(nextValue), "nextValue is simple data: %s", nextValue.GetValue())
+		tags := nextValue.tags
+		tt.Assert(len(tags) > 0, "nextValue %s has tag: %s", nextValue.GetValue().Interface(), tags)
+	}
+	next := it.Next()
+	tt.Assert(nil == next, "it.Next() == nil (%s)", next)
+}

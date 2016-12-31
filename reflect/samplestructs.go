@@ -7,6 +7,7 @@ type A struct {
 
 // B is a simple test struct.
 type B struct {
+	E
 	BI int
 }
 
@@ -17,46 +18,90 @@ type C struct {
 
 // AB is a composition of A and B.
 type AB struct {
-	a A
-	b B
+	A
+	B
 }
 
 // AC is a composition of A and C.
 type AC struct {
-	a A
-	c C
+	A
+	C
+}
+
+type D struct {
+	DI int
+}
+
+type E struct {
+	D  "out"
+	EI int "out"
 }
 
 // BC is a composition of B and C.
 type BC struct {
-	b B "out"
-	c C "in"
+	B "out"
+	C "in"
 }
 
 // ABBC is a composition of AB and BC.
 type ABBC struct {
-	ab AB
-	bc BC
+	AB
+	BC
+}
+
+// ABII is a composition of AB and two integers.
+type ABII struct {
+	AB
+	C int
+	D int
+}
+
+func newB(i int) *B {
+	return &B{
+		E:  *newE(),
+		BI: i,
+	}
 }
 
 func newAb() *AB {
 	return &AB{
-		a: A{AI: 1},
-		b: B{BI: 2},
+		A: A{AI: 1},
+		B: *newB(2),
 	}
 }
 
 func newBc() *BC {
 	return &BC{
-		b: B{BI: 3},
-		c: C{CI: 4},
+		B: *newB(3),
+		C: C{CI: 4},
+	}
+}
+
+func newD() *D {
+	return &D{
+		DI: 5,
+	}
+}
+
+func newE() *E {
+	return &E{
+		D:  *newD(),
+		EI: 6,
 	}
 }
 
 func newAbbc() *ABBC {
 	return &ABBC{
-		ab: *newAb(),
-		bc: *newBc(),
+		AB: *newAb(),
+		BC: *newBc(),
+	}
+}
+
+func newAbii() *ABII {
+	return &ABII{
+		AB: *newAb(),
+		C:  3,
+		D:  4,
 	}
 }
 

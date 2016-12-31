@@ -15,12 +15,13 @@ const (
 )
 
 func TestHasFlag(t *testing.T) {
+	tt := T.NewT(t)
 	var fs Flags
 
 	fs = fs | fTwo | fThree
-	T.Assert(!fs.HasFlag(fOne), "HasFlag(%#02x): %#02x\n", t, fs, fOne)
-	T.Assert(fs.HasFlag(fTwo), "HasFlag(%#02x): %#02x\n", t, fs, fTwo)
-	T.Assert(fs.HasFlag(fThree), "HasFlag(%#02x): %#02x\n", t, fs, fThree)
-	T.Assert(!fs.HasFlag(fFour), "HasFlag(%#02x): %#02x\n", t, fs, fFour)
-	T.Assert(!fs.HasFlag(fFive), "HasFlag(%#02x): %#02x\n", t, fs, fFive)
+	T.Assert(!fs.HasFlag(fOne), "HasFlag(%#02x): %#02x\n", tt, fs, fOne)
+	T.Assert(fs.HasFlag(fTwo), "HasFlag(%#02x): %#02x\n", tt, fs, fTwo)
+	T.Assert(fs.HasFlag(fThree), "HasFlag(%#02x): %#02x\n", tt, fs, fThree)
+	T.Assert(!fs.HasFlag(fFour), "HasFlag(%#02x): %#02x\n", tt, fs, fFour)
+	T.Assert(!fs.HasFlag(fFive), "HasFlag(%#02x): %#02x\n", tt, fs, fFive)
 }
