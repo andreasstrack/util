@@ -6,119 +6,37 @@ package reflect
 import (
 	"fmt"
 	"reflect"
+
+	"github.com/andreasstrack/datastructures/tree"
+	"github.com/andreasstrack/util"
+	"github.com/andreasstrack/util/patterns"
 )
 
-// GetAllFields returns:
-//
-// - all fields if i represents a struct, in a deep fashion
-//
-// - the value of i if i does not represent a struct
-func GetAllFields(i interface{}) []reflect.Value {
-	iv := GetElementValue(i)
-
-	var result []reflect.Value
-	if iv.Kind() != reflect.Struct {
-		result = append(result, iv)
-		return result
-	}
-
-	for i := 0; i < iv.NumField(); i++ {
-		allFields := GetAllFields(iv.Field(i).Interface())
-		result = append(result, allFields...)
-	}
-
-	return result
-}
-
-// GetAllAddressableFields returns:
-//
-// - all addressable fields if i represents a struct, in a deep fashion
-//
-// - the value of i if i does not represent a struct and
-//   its value is addressable
-//
-// - no value if i is not addressable
-func GetAllAddressableFields(i interface{}) []reflect.Value {
-	var result []reflect.Value
-
-	iv := GetElementValue(i)
-	if !iv.CanAddr() {
-		return result
-	}
-
-	if iv.Kind() != reflect.Struct {
-		result = append(result, iv)
-		return result
-	}
-
-	for i := 0; i < iv.NumField(); i++ {
-		if iv.Field(i).CanAddr() {
-			allFields := GetAllAddressableFields(iv.Field(i).Addr().Interface())
-			result = append(result, allFields...)
+// GetAllValues traverses the value tree of i and returns the values
+// filtered by the given flags.
+func GetAllValues(i interface{}, flags util.Flags) ([]reflect.Value, [][]reflect.StructTag) {
+	var resultValues []reflect.Value
+	var resultTags [][]reflect.StructTag
+	if it, err := NewValueIterator(i, flags, tree.BreadthFirst); err == nil {
+		allAsInterface := patterns.GetAll(it)
+		for i := range allAsInterface {
+			resultValues = append(resultValues, *allAsInterface[i].(tree.Node).GetValue().ReflectValue())
+			resultTags = append(resultTags, allAsInterface[i].(*ValueNode).tags)
 		}
 	}
-
-	return result
+	return resultValues, resultTags
 }
 
-// GetFieldsWithTag returns all fields of i (cf. GetAllFields),
-// which are tagged with tag.
-func GetFieldsWithTag(i interface{}, tag reflect.StructTag) []reflect.Value {
-	var result []reflect.Value
-
-	iv := GetElementValue(i)
-	it := GetElementType(i)
-
-	if iv.Kind() != reflect.Struct {
-		return result
-	}
-
-	for j := 0; j < iv.NumField(); j++ {
-		f := it.Field(j)
-
-		if f.Tag == tag {
-			result = append(result, iv.Field(j))
-		}
-	}
-
-	return result
+// GetAllAddressableFields returns all values of the value tree fitting FlagIsSimpleData
+// and FlagIsAddressable.
+func GetAllAddressableFields(i interface{}) ([]reflect.Value, [][]reflect.StructTag) {
+	return GetAllValues(i, FlagIsSimpleData|FlagIsAddressable)
 }
 
-// GetAddressableFieldsWithTag returns all addressable fields of i (cf. GetAllAddressableFields),
-// which are tagged with tag.
-func GetAddressableFieldsWithTag(i interface{}, tag reflect.StructTag) []reflect.Value {
-	var result []reflect.Value
-
-	iv := GetElementValue(i)
-	it := GetElementType(i)
-
-	if iv.Kind() != reflect.Struct || !iv.CanAddr() {
-		fmt.Printf("No result for: %v (kind: %s)\n", iv, iv.Kind())
-		return result
-	}
-
-	for j := 0; j < iv.NumField(); j++ {
-		f := it.Field(j)
-
-		if f.Tag == tag && iv.Field(j).CanAddr() {
-			result = append(result, iv.Field(j))
-		}
-	}
-
-	return result
-}
-
-// GetAllValues will return all values found within i.
-// It will return the result of GetAllFields plus the
-// value of i, if i is a struct.
-func GetAllValues(i interface{}) []reflect.Value {
-	var result []reflect.Value
-	if GetElementType(i).Kind() == reflect.Struct {
-		result = append(result, reflect.ValueOf(i))
-	}
-	result = append(result, GetAllFields(i)...)
-
-	return result
+// GetAllAddressableFieldsWithTag returns all values of the value tree fitting FlagIsSimpleData,
+// FlagIsAddressable, and FlagHasTag.
+func GetAllAddressableFieldsWithTag(i interface{}, tag reflect.StructTag) ([]reflect.Value, [][]reflect.StructTag) {
+	return GetAllValues(i, FlagIsSimpleData|FlagIsAddressable|FlagHasTag)
 }
 
 // IsPointer returns whether i represents a pointer value or not.
@@ -179,7 +97,7 @@ func CopyStruct(from interface{}, to interface{}) error {
 
 	if fromValue.Kind() != reflect.Struct ||
 		toValue.Kind() != reflect.Struct {
-		return fmt.Errorf("Need to structs, got %v (from) and %v (to)", from, to)
+		return fmt.Errorf("Need two structs, got %v (from) and %v (to)", from, to)
 	}
 
 	nFieldsFrom := fromValue.NumField()

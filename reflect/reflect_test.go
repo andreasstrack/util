@@ -1,112 +1,68 @@
 package reflect
 
-// import (
-// 	"reflect"
-// 	"testing"
+import (
+	"reflect"
+	"testing"
 
-// 	T "github.com/andreasstrack/util/testing"
-// )
+	T "github.com/andreasstrack/util/testing"
+)
 
-// func TestGetAllFields(t *testing.T) {
-// 	b := RB{W: true, RA: RA{I: 2, F: 3.14, S: "hello"}}
+func TestGetAllFields(t *testing.T) {
+	tt := T.NewT(t)
+	b := newBifs()
 
-// 	allFields := GetAllFields(b)
+	allFields, _ := GetAllValues(*b, FlagIsSimpleData)
 
-// 	T.Assert(len(allFields) == 4, "len(allFields) == 4: %v", t, allFields)
+	tt.AssertEquals(4, len(allFields), "len(allFields)")
 
-// 	T.Assert(allFields[0].Kind() == reflect.Bool, "allFields[0].Kind() == reflect.Bool: %v", t, allFields[0].Interface())
-// 	T.Assert(allFields[0].Interface().(bool) == b.W, "allFields[0].Interface().(bool) == B.W", t)
+	tt.Assert(allFields[0].Kind() == reflect.Bool, "allFields[0].Kind() == reflect.Bool")
+	tt.Assert(allFields[0].Interface().(bool) == b.B, "allFields[0].Interface().(bool) == b.B")
 
-// 	T.Assert(allFields[1].Kind() == reflect.Int, "allFields[1].Kind() == reflect.Int: %v", t, allFields[1].Interface())
-// 	T.Assert(allFields[1].Interface().(int) == b.I, "allFields[1].Interface().(int) == B.I", t)
+	tt.Assert(allFields[1].Kind() == reflect.Int, "allFields[1].Kind() == reflect.Int: %v", allFields[1].Interface())
+	tt.Assert(allFields[1].Interface().(int) == b.I, "allFields[1].Interface().(int) == B.I")
 
-// 	T.Assert(allFields[2].Kind() == reflect.Float32, "allFields[2].Kind() == reflect.Float32: %v", t, allFields[2].Interface())
-// 	T.Assert(allFields[2].Interface().(float32) == b.F, "allFields[2].Interface().(float32) == B.F", t)
+	tt.Assert(allFields[2].Kind() == reflect.Float32, "allFields[2].Kind() == reflect.Float32: %v", allFields[2].Interface())
+	tt.Assert(allFields[2].Interface().(float32) == b.F, "allFields[2].Interface().(float32) == B.F")
 
-// 	T.Assert(allFields[3].Kind() == reflect.String, "allFields[3].Kind() == reflect.String: %v", t, allFields[3].Interface())
-// 	T.Assert(allFields[3].Interface().(string) == b.S, "allFields[3].Interface().(string) == B.S", t)
-// }
+	tt.Assert(allFields[3].Kind() == reflect.String, "allFields[3].Kind() == reflect.String: %v", allFields[3].Interface())
+	tt.Assert(allFields[3].Interface().(string) == b.S, "allFields[3].Interface().(string) == B.S")
+}
 
-// func TestGetAllAddressableFields(t *testing.T) {
-// 	b := RB{W: true, RA: RA{I: 2, F: 3.14, S: "hello"}}
+func TestGetAllAddressableFields(t *testing.T) {
+	tt := T.NewT(t)
+	b := newBifs()
 
-// 	allFields := GetAllAddressableFields(&b)
+	allFields, _ := GetAllValues(b, FlagIsAddressable|FlagIsSimpleData)
 
-// 	T.Assert(len(allFields) == 4, "len(allFields) == 4: %v", t, allFields)
+	tt.AssertEquals(4, len(allFields), "len(allFields) (%s)", allFields)
 
-// 	T.Assert(allFields[0].Kind() == reflect.Bool, "allFields[0].Kind() == reflect.Bool: %v", t, allFields[0].Interface())
-// 	T.Assert(allFields[0].Interface().(bool) == b.W, "allFields[0].Interface().(bool) == B.W", t)
+	tt.AssertEquals(reflect.Bool, allFields[0].Kind(), "allFields[0].Kind()")
+	tt.Assert(allFields[0].Interface().(bool) == b.B, "allFields[0].Interface().(bool) == b.B")
 
-// 	T.Assert(allFields[1].Kind() == reflect.Int, "allFields[1].Kind() == reflect.Int: %v", t, allFields[1].Interface())
-// 	T.Assert(allFields[1].Interface().(int) == b.I, "allFields[1].Interface().(int) == B.I", t)
+	tt.Assert(allFields[1].Kind() == reflect.Int, "allFields[1].Kind() == reflect.Int: %v", allFields[1].Interface())
+	tt.Assert(allFields[1].Interface().(int) == b.I, "allFields[1].Interface().(int) == B.I")
 
-// 	T.Assert(allFields[2].Kind() == reflect.Float32, "allFields[2].Kind() == reflect.Float32: %v", t, allFields[2].Interface())
-// 	T.Assert(allFields[2].Interface().(float32) == b.F, "allFields[2].Interface().(float32) == B.F", t)
+	tt.Assert(allFields[2].Kind() == reflect.Float32, "allFields[2].Kind() == reflect.Float32: %v", allFields[2].Interface())
+	tt.Assert(allFields[2].Interface().(float32) == b.F, "allFields[2].Interface().(float32) == B.F")
 
-// 	T.Assert(allFields[3].Kind() == reflect.String, "allFields[3].Kind() == reflect.String: %v", t, allFields[3].Interface())
-// 	T.Assert(allFields[3].Interface().(string) == b.S, "allFields[3].Interface().(string) == B.S", t)
+	tt.Assert(allFields[3].Kind() == reflect.String, "allFields[3].Kind() == reflect.String: %v", allFields[3].Interface())
+	tt.Assert(allFields[3].Interface().(string) == b.S, "allFields[3].Interface().(string) == B.S")
 
-// 	for i := range allFields {
-// 		T.Assert(allFields[i].CanAddr(), "allFields[i].CanAddr(): %v", t, allFields[i])
-// 	}
-// }
+	for i := range allFields {
+		tt.Assert(allFields[i].CanAddr(), "allFields[i].CanAddr(): %v", allFields[i])
+	}
+}
 
-// func TestGetAddressableFieldsWithTag(t *testing.T) {
-// 	b := RB{W: true, RA: RA{I: 2, F: 3.14, S: "hello"}}
+func TestGetAddressableFieldsWithTag(t *testing.T) {
+	tt := T.NewVerboseT(t)
+	b := newBifs()
 
-// 	allFields := GetAddressableFieldsWithTag(b, "foo")
-// 	T.Assert(len(allFields) == 0, "len(allFields) == 0: %v", t, allFields)
+	allFields, allTags := GetAllValues(b, FlagIsSimpleData|FlagIsAddressable|FlagHasTag)
+	tt.AssertEquals(4, len(allFields), "len(allFields)")
+	tt.AssertEquals(len(allFields), len(allTags), "len(fields) = len(tags)")
+	tt.Assert(allTags != nil, "allFields: %s", allFields)
+	tt.Assert(allTags != nil, "allTags: %s", allTags)
 
-// func TestGetAllFields(t *testing.T) {
-// 	b := RB{W: true, RA: RA{I: 2, F: 3.14, S: "hello"}}
-
-// 	allFields := GetAllFields(b)
-
-// 	T.Assert(len(allFields) == 4, "len(allFields) == 4: %v", t, allFields)
-
-// 	T.Assert(allFields[0].Kind() == reflect.Bool, "allFields[0].Kind() == reflect.Bool: %v", t, allFields[0].Interface())
-// 	T.Assert(allFields[0].Interface().(bool) == b.W, "allFields[0].Interface().(bool) == B.W", t)
-
-// 	T.Assert(allFields[1].Kind() == reflect.Int, "allFields[1].Kind() == reflect.Int: %v", t, allFields[1].Interface())
-// 	T.Assert(allFields[1].Interface().(int) == b.I, "allFields[1].Interface().(int) == B.I", t)
-
-// 	T.Assert(allFields[2].Kind() == reflect.Float32, "allFields[2].Kind() == reflect.Float32: %v", t, allFields[2].Interface())
-// 	T.Assert(allFields[2].Interface().(float32) == b.F, "allFields[2].Interface().(float32) == B.F", t)
-
-// 	T.Assert(allFields[3].Kind() == reflect.String, "allFields[3].Kind() == reflect.String: %v", t, allFields[3].Interface())
-// 	T.Assert(allFields[3].Interface().(string) == b.S, "allFields[3].Interface().(string) == B.S", t)
-// }
-
-// func TestGetAllAddressableFields(t *testing.T) {
-// 	b := RB{W: true, RA: RA{I: 2, F: 3.14, S: "hello"}}
-
-// 	allFields := GetAllAddressableFields(&b)
-
-// 	T.Assert(len(allFields) == 4, "len(allFields) == 4: %v", t, allFields)
-
-// 	T.Assert(allFields[0].Kind() == reflect.Bool, "allFields[0].Kind() == reflect.Bool: %v", t, allFields[0].Interface())
-// 	T.Assert(allFields[0].Interface().(bool) == b.W, "allFields[0].Interface().(bool) == B.W", t)
-
-// 	T.Assert(allFields[1].Kind() == reflect.Int, "allFields[1].Kind() == reflect.Int: %v", t, allFields[1].Interface())
-// 	T.Assert(allFields[1].Interface().(int) == b.I, "allFields[1].Interface().(int) == B.I", t)
-
-// 	T.Assert(allFields[2].Kind() == reflect.Float32, "allFields[2].Kind() == reflect.Float32: %v", t, allFields[2].Interface())
-// 	T.Assert(allFields[2].Interface().(float32) == b.F, "allFields[2].Interface().(float32) == B.F", t)
-
-// 	T.Assert(allFields[3].Kind() == reflect.String, "allFields[3].Kind() == reflect.String: %v", t, allFields[3].Interface())
-// 	T.Assert(allFields[3].Interface().(string) == b.S, "allFields[3].Interface().(string) == B.S", t)
-
-// 	for i := range allFields {
-// 		T.Assert(allFields[i].CanAddr(), "allFields[i].CanAddr(): %v", t, allFields[i])
-// 	}
-// }
-
-// func TestGetAddressableFieldsWithTag(t *testing.T) {
-// 	b := RB{W: true, RA: RA{I: 2, F: 3.14, S: "hello"}}
-
-// 	allFields := GetAddressableFieldsWithTag(b, "foo")
-// 	T.Assert(len(allFields) == 0, "len(allFields) == 0: %v", t, allFields)
-
-// 	allFields = GetAddressableFieldsWithTag(&b, "bar")
-// 	T.Assert(len(allFields) == 1, "len(allFields) == 1: %v", t, allFields)
-// }
+	// allFields = GetAddressableFieldsWithTag(b, "bar")
+	// tt.Assert(len(allFields) == 1, "len(allFields) == 1: %v", allFields)
+}

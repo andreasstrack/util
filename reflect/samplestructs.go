@@ -107,13 +107,28 @@ func newAbii() *ABII {
 
 // IFS is a test struct containing an int, a float32, and a string.
 type IFS struct {
-	I int
-	F float32
-	S string
+	I int     "out"
+	F float32 "in"
+	S string  "in"
 }
 
 // BIFS is a tagged test struct composed of a bool and an IFS struct.
 type BIFS struct {
-	B   bool `direction:"out"`
+	B   bool "bar"
 	IFS `direction:"in"`
+}
+
+func newIfs() *IFS {
+	return &IFS{
+		I: 2,
+		F: 3.14,
+		S: "hello",
+	}
+}
+
+func newBifs() *BIFS {
+	return &BIFS{
+		B:   true,
+		IFS: *newIfs(),
+	}
 }

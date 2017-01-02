@@ -113,7 +113,7 @@ func TestTraversalOfSimpleData(t *testing.T) {
 }
 
 func TestTraversalOfSimpleDataWithTags(t *testing.T) {
-	tt := T.NewVerboseT(t)
+	tt := T.NewT(t)
 	s := *newAbbc()
 	flags := FlagIsSimpleData | FlagHasTag
 	it, err := NewValueIterator(s, flags, tree.BreadthFirst)

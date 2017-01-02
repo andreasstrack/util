@@ -16,6 +16,8 @@ const (
 	// FlagIsSimpleData - Find only values representing non-aggregate
 	// (non-struct) data, e.g. int, float, string etc.
 	FlagIsSimpleData
+	// FlagIsAddressable - Find only addressable values.
+	FlagIsAddressable
 )
 
 type valueIterator struct {
@@ -173,6 +175,7 @@ func (vnv valueNodeValidator) IsValid(n tree.Node) bool {
 	valid := true
 	valid = valid && (!vnv.flags.HasFlag(FlagHasTag) || len(vn.tags) > 0)
 	valid = valid && (!vnv.flags.HasFlag(FlagIsSimpleData) || datastructures.IsSimpleData(n.(datastructures.Value)))
+	valid = valid && (!vnv.flags.HasFlag(FlagIsAddressable) || vn.CanAddr())
 	return valid
 }
 
