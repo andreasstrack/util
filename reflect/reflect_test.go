@@ -13,7 +13,7 @@ func TestGetAllFields(t *testing.T) {
 
 	allFields, _ := GetAllValues(*b, FlagIsSimpleData)
 
-	tt.AssertEquals(4, len(allFields), "len(allFields)")
+	tt.AssertEquals(4, len(allFields), "len(allFields) for %s", b)
 
 	tt.Assert(allFields[0].Kind() == reflect.Bool, "allFields[0].Kind() == reflect.Bool")
 	tt.Assert(allFields[0].Interface().(bool) == b.B, "allFields[0].Interface().(bool) == b.B")

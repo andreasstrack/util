@@ -1,6 +1,6 @@
 package patterns
 
-// Iterator is the interface for the iterate package.
+// Iterator is the interface for Java-style iterators.
 type Iterator interface {
 	HasNext() bool
 	Next() interface{}

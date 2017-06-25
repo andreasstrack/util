@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/andreasstrack/datastructures/tree"
+	"github.com/andreasstrack/data/tree"
 	"github.com/andreasstrack/util"
 	"github.com/andreasstrack/util/patterns"
 )

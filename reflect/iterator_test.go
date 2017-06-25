@@ -3,8 +3,8 @@ package reflect
 import (
 	"testing"
 
-	"github.com/andreasstrack/datastructures"
-	"github.com/andreasstrack/datastructures/tree"
+	"github.com/andreasstrack/data"
+	"github.com/andreasstrack/data/tree"
 	"github.com/andreasstrack/util"
 	T "github.com/andreasstrack/util/testing"
 )
@@ -13,7 +13,7 @@ func TestSimpleValueIteration(t *testing.T) {
 	tt := T.NewT(t)
 	s := newAb()
 	ni, err := NewValueIterator(s, 0, tree.BreadthFirst)
-	tt.AssertNoError(err, "NewValueIterator for %s", s)
+	tt.AssertNoError(err, "NewValueIterator for %v", s)
 
 	for ni.HasNext() {
 		n := ni.Next()
@@ -106,7 +106,7 @@ func TestTraversalOfSimpleData(t *testing.T) {
 		next := it.Next()
 		tt.Assert(next != nil, "it.Next() != nil (%s)", next)
 		nextValue := next.(*ValueNode)
-		tt.Assert(datastructures.IsSimpleData(nextValue), "nextValue is simple data: %s", nextValue.GetValue())
+		tt.Assert(data.IsSimpleData(nextValue), "nextValue is simple data: %s", nextValue.GetValue())
 	}
 	next := it.Next()
 	tt.Assert(nil == next, "it.Next() == nil (%s)", next)
@@ -122,7 +122,7 @@ func TestTraversalOfSimpleDataWithTags(t *testing.T) {
 		next := it.Next()
 		tt.Assert(next != nil, "it.Next() != nil (%s)", next)
 		nextValue := next.(*ValueNode)
-		tt.Assert(datastructures.IsSimpleData(nextValue), "nextValue is simple data: %s", nextValue.GetValue())
+		tt.Assert(data.IsSimpleData(nextValue), "nextValue is simple data: %s", nextValue.GetValue())
 		tags := nextValue.tags
 		tt.Assert(len(tags) > 0, "nextValue %s has tag: %s", nextValue.GetValue().Interface(), tags)
 	}

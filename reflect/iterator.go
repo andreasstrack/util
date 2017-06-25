@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/andreasstrack/datastructures"
-	"github.com/andreasstrack/datastructures/tree"
+	"github.com/andreasstrack/data"
+	"github.com/andreasstrack/data/tree"
 	"github.com/andreasstrack/util"
 	"github.com/andreasstrack/util/patterns"
 )
@@ -28,11 +28,12 @@ type valueIterator struct {
 // NewValueIterator generates an iterator returning values of i
 // as specified by the flags.
 func NewValueIterator(i interface{}, flags util.Flags, traversalStrategy tree.TraversalStrategy) (patterns.Iterator, error) {
-	vi := *tree.NewValidatedNodeIterator(interfaceToValueNode(i), func(n tree.Node) tree.ChildIterator {
-		ci := newValueChildIterator(flags)
-		ci.Init(n)
-		return ci
-	},
+	vi := *tree.NewValidatedNodeIterator(interfaceToValueNode(i),
+		func(n tree.Node) tree.ChildIterator {
+			ci := newValueChildIterator(flags)
+			ci.Init(n)
+			return ci
+		},
 		traversalStrategy,
 		NewNodeValidator(flags))
 	return &vi, nil
@@ -121,7 +122,6 @@ func (vn *ValueNode) String() string {
 
 func newValueNode(parent tree.Node, v reflect.Value, tag *reflect.StructTag) *ValueNode {
 	vn := &ValueNode{ValueNode: *tree.NewValueNode(v), childrenInitialized: false, tags: make([]reflect.StructTag, 0)}
-	vn.SetParent(parent)
 	if parent != nil {
 		vn.tags = append(vn.tags, parent.(*ValueNode).tags...)
 	}
@@ -135,7 +135,7 @@ func (vn *ValueNode) ReflectValue() *reflect.Value {
 	return &vn.Value
 }
 
-func (vn *ValueNode) GetValue() datastructures.Value {
+func (vn *ValueNode) GetValue() data.Value {
 	return vn
 }
 
@@ -174,8 +174,9 @@ func (vnv valueNodeValidator) IsValid(n tree.Node) bool {
 	vn := n.(*ValueNode)
 	valid := true
 	valid = valid && (!vnv.flags.HasFlag(FlagHasTag) || len(vn.tags) > 0)
-	valid = valid && (!vnv.flags.HasFlag(FlagIsSimpleData) || datastructures.IsSimpleData(n.(datastructures.Value)))
+	valid = valid && (!vnv.flags.HasFlag(FlagIsSimpleData) || data.IsSimpleData(n.(data.Value)))
 	valid = valid && (!vnv.flags.HasFlag(FlagIsAddressable) || vn.CanAddr())
+	// fmt.Printf("%s is valid? %s\n", vn, valid)
 	return valid
 }
 
