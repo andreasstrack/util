@@ -1,17 +1,28 @@
 package reflect
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
 	T "github.com/andreasstrack/util/testing"
 )
 
+func TestGetAllValues(t *testing.T) {
+	tt := T.NewT(t)
+	abbc := newAbbc()
+	values, tags := GetAllValues(abbc)
+	tt.AssertEquals(19, len(values), "Number of values: %v", values)
+	tt.AssertEquals(19, len(values), "Number of tag lists: %v", tags)
+	tt.AssertEquals("in", fmt.Sprintf("%s", tags[6][0]), "Tag 6.0")
+	tt.AssertEquals("out", fmt.Sprintf("%s", tags[18][1]), "Tag 18.1")
+}
+
 func TestGetAllFields(t *testing.T) {
 	tt := T.NewT(t)
 	b := newBifs()
 
-	allFields, _ := GetAllValues(*b, FlagIsSimpleData)
+	allFields, _ := GetAllValuesWithFlags(*b, FlagIsSimpleData)
 
 	tt.AssertEquals(4, len(allFields), "len(allFields) for %s", b)
 
@@ -32,7 +43,7 @@ func TestGetAllAddressableFields(t *testing.T) {
 	tt := T.NewT(t)
 	b := newBifs()
 
-	allFields, _ := GetAllValues(b, FlagIsAddressable|FlagIsSimpleData)
+	allFields, _ := GetAllValuesWithFlags(b, FlagIsAddressable|FlagIsSimpleData)
 
 	tt.AssertEquals(4, len(allFields), "len(allFields) (%s)", allFields)
 
@@ -54,10 +65,10 @@ func TestGetAllAddressableFields(t *testing.T) {
 }
 
 func TestGetAddressableFieldsWithTag(t *testing.T) {
-	tt := T.NewVerboseT(t)
+	tt := T.NewT(t)
 	b := newBifs()
 
-	allFields, allTags := GetAllValues(b, FlagIsSimpleData|FlagIsAddressable|FlagHasTag)
+	allFields, allTags := GetAllValuesWithFlags(b, FlagIsSimpleData|FlagIsAddressable|FlagHasTag)
 	tt.AssertEquals(4, len(allFields), "len(allFields)")
 	tt.AssertEquals(len(allFields), len(allTags), "len(fields) = len(tags)")
 	tt.Assert(allTags != nil, "allFields: %s", allFields)

@@ -12,9 +12,13 @@ import (
 	"github.com/andreasstrack/util/patterns"
 )
 
-// GetAllValues traverses the value tree of i and returns the values
+func GetAllValues(i interface{}) ([]reflect.Value, [][]reflect.StructTag) {
+	return GetAllValuesWithFlags(i, util.FlagNone)
+}
+
+// GetAllValuesWithFlags traverses the value tree of i and returns the values
 // filtered by the given flags.
-func GetAllValues(i interface{}, flags util.Flags) ([]reflect.Value, [][]reflect.StructTag) {
+func GetAllValuesWithFlags(i interface{}, flags util.Flags) ([]reflect.Value, [][]reflect.StructTag) {
 	var resultValues []reflect.Value
 	var resultTags [][]reflect.StructTag
 	if it, err := NewValueIterator(i, flags, tree.BreadthFirst); err == nil {
@@ -30,13 +34,13 @@ func GetAllValues(i interface{}, flags util.Flags) ([]reflect.Value, [][]reflect
 // GetAllAddressableFields returns all values of the value tree fitting FlagIsSimpleData
 // and FlagIsAddressable.
 func GetAllAddressableFields(i interface{}) ([]reflect.Value, [][]reflect.StructTag) {
-	return GetAllValues(i, FlagIsSimpleData|FlagIsAddressable)
+	return GetAllValuesWithFlags(i, FlagIsSimpleData|FlagIsAddressable)
 }
 
 // GetAllAddressableFieldsWithTag returns all values of the value tree fitting FlagIsSimpleData,
 // FlagIsAddressable, and FlagHasTag.
 func GetAllAddressableFieldsWithTag(i interface{}, tag reflect.StructTag) ([]reflect.Value, [][]reflect.StructTag) {
-	return GetAllValues(i, FlagIsSimpleData|FlagIsAddressable|FlagHasTag)
+	return GetAllValuesWithFlags(i, FlagIsSimpleData|FlagIsAddressable|FlagHasTag)
 }
 
 // IsPointer returns whether i represents a pointer value or not.
