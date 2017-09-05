@@ -6,12 +6,13 @@ import (
 	"github.com/andreasstrack/data"
 	"github.com/andreasstrack/data/tree"
 	"github.com/andreasstrack/util"
+	"github.com/andreasstrack/util/reflect/testData"
 	T "github.com/andreasstrack/util/testing"
 )
 
 func TestSimpleValueIteration(t *testing.T) {
 	tt := T.NewT(t)
-	s := newAb()
+	s := testData.NewAb()
 	ni, err := NewValueIterator(s, 0, tree.BreadthFirst)
 	tt.AssertNoError(err, "NewValueIterator for %v", s)
 
@@ -41,7 +42,7 @@ func TestSimpleValueIteration(t *testing.T) {
 
 func TestBreadthFirstTraversal(t *testing.T) {
 	tt := T.NewT(t)
-	s := *newAbii()
+	s := *testData.NewAbii()
 	flags := util.FlagNone
 	it, err := NewValueIterator(s, flags, tree.BreadthFirst)
 	tt.AssertNoError(err, "NewValueIterator(%s,%s)", s, flags)
@@ -61,7 +62,7 @@ func TestBreadthFirstTraversal(t *testing.T) {
 
 func TestDepthFirstTraversal(t *testing.T) {
 	tt := T.NewT(t)
-	s := *newAbii()
+	s := *testData.NewAbii()
 	flags := util.FlagNone
 	it, err := NewValueIterator(s, flags, tree.DepthFirst)
 	tt.AssertNoError(err, "NewValueIterator(%s,%s)", s, flags)
@@ -81,7 +82,7 @@ func TestDepthFirstTraversal(t *testing.T) {
 
 func TestTraversalWithTags(t *testing.T) {
 	tt := T.NewT(t)
-	s := *newAbbc()
+	s := *testData.NewAbbc()
 	flags := FlagHasTag
 	it, err := NewValueIterator(s, flags, tree.BreadthFirst)
 	tt.AssertNoError(err, "NewValueIterator for %s", s)
@@ -98,7 +99,7 @@ func TestTraversalWithTags(t *testing.T) {
 
 func TestTraversalOfSimpleData(t *testing.T) {
 	tt := T.NewT(t)
-	s := *newAbbc()
+	s := *testData.NewAbbc()
 	flags := FlagIsSimpleData
 	it, err := NewValueIterator(s, flags, tree.BreadthFirst)
 	tt.AssertNoError(err, "NewValueIterator for %s", s)
@@ -114,7 +115,7 @@ func TestTraversalOfSimpleData(t *testing.T) {
 
 func TestTraversalOfSimpleDataWithTags(t *testing.T) {
 	tt := T.NewT(t)
-	s := *newAbbc()
+	s := *testData.NewAbbc()
 	flags := FlagIsSimpleData | FlagHasTag
 	it, err := NewValueIterator(s, flags, tree.BreadthFirst)
 	tt.AssertNoError(err, "NewValueIterator for %s", s)

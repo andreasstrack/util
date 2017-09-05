@@ -13,17 +13,17 @@ import (
 const (
 	// FlagHasTag - Find only struct fields with a tag.
 	FlagHasTag util.Flags = 1 << iota
+	// FlagInheritTags - Passes the tag of a struct field to its (potential)
+	// children
+	FlagInheritTags
 	// FlagIsSimpleData - Find only values representing non-aggregate
 	// (non-struct) data, e.g. int, float, string etc.
 	FlagIsSimpleData
 	// FlagIsAddressable - Find only addressable values.
 	FlagIsAddressable
+	// FlagIncludeCannotInterface - Find also values that cannot interface.
+	FlagIncludeCannotInterface
 )
-
-type valueIterator struct {
-	flags util.Flags
-	tree.NodeIterator
-}
 
 // NewValueIterator generates an iterator returning values of i
 // as specified by the flags.
@@ -51,7 +51,7 @@ func interfaceToValueNode(i interface{}) tree.Node {
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
 	}
-	result := newValueNode(nil, v, nil)
+	result := newValueNode(nil, v, nil, util.FlagNone)
 	return result
 }
 
@@ -120,10 +120,13 @@ func (vn *ValueNode) String() string {
 	return fmt.Sprintf("%s", vn.ValueNode.String())
 }
 
-func newValueNode(parent tree.Node, v reflect.Value, tag *reflect.StructTag) *ValueNode {
+func newValueNode(parent tree.Node, v reflect.Value, tag *reflect.StructTag, flags util.Flags) *ValueNode {
 	vn := &ValueNode{ValueNode: *tree.NewValueNode(v), childrenInitialized: false, tags: make([]reflect.StructTag, 0)}
-	if parent != nil {
-		vn.tags = append(vn.tags, parent.(*ValueNode).tags...)
+
+	if flags.HasFlag(FlagInheritTags) && parent != nil {
+		pnv := parent.(*ValueNode)
+		vn.tags = append(vn.tags, pnv.tags...)
+
 	}
 	if tag != nil && *tag != "" {
 		vn.tags = append(vn.tags, *tag)
@@ -139,29 +142,6 @@ func (vn *ValueNode) GetValue() data.Value {
 	return vn
 }
 
-func (vn *ValueNode) GetChildren() []tree.Node {
-	if !vn.childrenInitialized {
-		vn.initChildren()
-	}
-	return vn.ValueNode.GetChildren()
-}
-
-func (vn *ValueNode) initChildren() {
-	ev := vn.Value
-	if ev.Kind() == reflect.Ptr {
-		ev = ev.Elem()
-	}
-	if ev.Kind() != reflect.Struct {
-		return
-	}
-	for i := 0; i < ev.NumField(); i++ {
-		fv := ev.Field(i)
-		sf := ev.Type().Field(i)
-		child := newValueNode(vn, fv, &sf.Tag)
-		vn.Add(child)
-	}
-}
-
 type valueNodeValidator struct {
 	flags util.Flags
 }
@@ -173,20 +153,21 @@ func NewNodeValidator(flags util.Flags) tree.NodeValidator {
 func (vnv valueNodeValidator) IsValid(n tree.Node) bool {
 	vn := n.(*ValueNode)
 	valid := true
+	if !vn.CanInterface() {
+		valid = vnv.flags.HasFlag(FlagIncludeCannotInterface)
+	}
 	valid = valid && (!vnv.flags.HasFlag(FlagHasTag) || len(vn.tags) > 0)
 	valid = valid && (!vnv.flags.HasFlag(FlagIsSimpleData) || data.IsSimpleData(n.(data.Value)))
 	valid = valid && (!vnv.flags.HasFlag(FlagIsAddressable) || vn.CanAddr())
-	// fmt.Printf("%s is valid? %s\n", vn, valid)
 	return valid
 }
 
-// TODO: Store parent, num children and current child index
-//       for not opening children unnecessarily?
 type valueChildIterator struct {
-	children  []tree.Node
-	nextIndex int
-	next      tree.Node
-	flags     util.Flags
+	parent       tree.Node
+	elementValue reflect.Value
+	nextIndex    int
+	next         tree.Node
+	flags        util.Flags
 }
 
 func newValueChildIterator(flags util.Flags) *valueChildIterator {
@@ -194,19 +175,24 @@ func newValueChildIterator(flags util.Flags) *valueChildIterator {
 }
 
 func (vci *valueChildIterator) Init(n tree.Node) {
-	vci.children = n.GetChildren()
-	vci.nextIndex = -1
+	vci.parent = n
+	vci.elementValue = n.(*ValueNode).Value
+	if vci.elementValue.Kind() == reflect.Ptr {
+		vci.elementValue = vci.elementValue.Elem()
+	}
+	vci.nextIndex = 0
 	vci.next = vci.getNext()
 }
 
 func (vci *valueChildIterator) getNext() tree.Node {
-	vci.nextIndex++
-	l := len(vci.children)
-	if vci.nextIndex >= l {
+	if vci.elementValue.Kind() != reflect.Struct || vci.nextIndex >= vci.elementValue.NumField() {
 		return nil
 	}
-	n := vci.children[vci.nextIndex].(*ValueNode)
-	return n
+	fv := vci.elementValue.Field(vci.nextIndex)
+	sf := vci.elementValue.Type().Field(vci.nextIndex)
+	child := newValueNode(vci.parent, fv, &sf.Tag, vci.flags)
+	vci.nextIndex++
+	return child
 }
 
 func (vci *valueChildIterator) Next() interface{} {

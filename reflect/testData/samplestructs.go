@@ -1,4 +1,13 @@
-package reflect
+package testData
+
+type CannotInterface struct {
+	I int
+	f float32
+}
+
+func NewCannotInterface() *CannotInterface {
+	return &CannotInterface{I: 1, f: 2.78}
+}
 
 // The A is a simple test struct.
 type A struct {
@@ -56,50 +65,50 @@ type ABII struct {
 	D int
 }
 
-func newB(i int) *B {
+func NewB(i int) *B {
 	return &B{
-		E:  *newE(),
+		E:  *NewE(),
 		BI: i,
 	}
 }
 
-func newAb() *AB {
+func NewAb() *AB {
 	return &AB{
 		A: A{AI: 1},
-		B: *newB(2),
+		B: *NewB(2),
 	}
 }
 
-func newBc() *BC {
+func NewBc() *BC {
 	return &BC{
-		B: *newB(3),
+		B: *NewB(3),
 		C: C{CI: 4},
 	}
 }
 
-func newD() *D {
+func NewD() *D {
 	return &D{
 		DI: 5,
 	}
 }
 
-func newE() *E {
+func NewE() *E {
 	return &E{
-		D:  *newD(),
+		D:  *NewD(),
 		EI: 6,
 	}
 }
 
-func newAbbc() *ABBC {
+func NewAbbc() *ABBC {
 	return &ABBC{
-		AB: *newAb(),
-		BC: *newBc(),
+		AB: *NewAb(),
+		BC: *NewBc(),
 	}
 }
 
-func newAbii() *ABII {
+func NewAbii() *ABII {
 	return &ABII{
-		AB: *newAb(),
+		AB: *NewAb(),
 		C:  3,
 		D:  4,
 	}
@@ -118,7 +127,7 @@ type BIFS struct {
 	IFS `direction:"in"`
 }
 
-func newIfs() *IFS {
+func NewIfs() *IFS {
 	return &IFS{
 		I: 2,
 		F: 3.14,
@@ -126,9 +135,9 @@ func newIfs() *IFS {
 	}
 }
 
-func newBifs() *BIFS {
+func NewBifs() *BIFS {
 	return &BIFS{
 		B:   true,
-		IFS: *newIfs(),
+		IFS: *NewIfs(),
 	}
 }

@@ -39,8 +39,8 @@ func GetAllAddressableFields(i interface{}) ([]reflect.Value, [][]reflect.Struct
 
 // GetAllAddressableFieldsWithTag returns all values of the value tree fitting FlagIsSimpleData,
 // FlagIsAddressable, and FlagHasTag.
-func GetAllAddressableFieldsWithTag(i interface{}, tag reflect.StructTag) ([]reflect.Value, [][]reflect.StructTag) {
-	return GetAllValuesWithFlags(i, FlagIsSimpleData|FlagIsAddressable|FlagHasTag)
+func GetAllAddressableFieldsWithInheritedTag(i interface{}, tag reflect.StructTag) ([]reflect.Value, [][]reflect.StructTag) {
+	return GetAllValuesWithFlags(i, FlagIsSimpleData|FlagIsAddressable|FlagHasTag|FlagInheritTags)
 }
 
 // IsPointer returns whether i represents a pointer value or not.

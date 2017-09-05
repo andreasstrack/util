@@ -39,13 +39,21 @@ func (t *T) AssertEquals(expected interface{}, actual interface{}, message strin
 // AssertError performs Assert(...) on the testing.T wrapped by t,
 // testing err for not being nil.
 func (t *T) AssertError(err error, message string, arg ...interface{}) {
-	Assert(nil != err, message, t, arg...)
+	errorText := "nil"
+	if nil != err {
+		errorText = err.Error()
+	}
+	Assert(nil != err, "Error '"+errorText+"' (Context: "+message+")", t, arg...)
 }
 
 // AssertNoError performs Assert(...) on the testing.T wrapped by t,
 // testing err for being nil.
 func (t *T) AssertNoError(err error, message string, arg ...interface{}) {
-	Assert(nil == err, message, t, arg...)
+	errorText := "nil"
+	if nil != err {
+		errorText = err.Error()
+	}
+	Assert(nil == err, "Error '"+errorText+"' (Context: "+message+")", t, arg...)
 }
 
 // Assert tests a condition occuring during a test t for being true.
