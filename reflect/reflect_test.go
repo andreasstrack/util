@@ -11,6 +11,17 @@ import (
 	T "github.com/andreasstrack/util/testing"
 )
 
+func TestCanAddressAfterValueConversion(t *testing.T) {
+	tt := T.NewVerboseT(t)
+	var d interface{}
+	d = testData.NewD()
+	v := reflect.ValueOf(d).Elem().FieldByName("DI")
+	tt.Assert(v.CanAddr(), "Check: CanAddr value: %#v", v)
+	vi := v.Addr().Interface()
+	vvi := reflect.ValueOf(vi).Elem()
+	tt.Assert(vvi.CanAddr(), "Check: CanAddr value of interface of value of pointer: %#v", vvi)
+}
+
 func TestGetAllValues(t *testing.T) {
 	tt := T.NewT(t)
 	abbc := testData.NewAbbc()

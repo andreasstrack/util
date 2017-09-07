@@ -33,7 +33,7 @@ func GetAllValuesWithFlags(i interface{}, flags util.Flags) ([]reflect.Value, []
 
 // GetAllAddressableFields returns all values of the value tree fitting FlagIsSimpleData
 // and FlagIsAddressable.
-func GetAllAddressableFields(i interface{}) ([]reflect.Value, [][]reflect.StructTag) {
+func GetAllAddressableSimpleDataFields(i interface{}) ([]reflect.Value, [][]reflect.StructTag) {
 	return GetAllValuesWithFlags(i, FlagIsSimpleData|FlagIsAddressable)
 }
 
