@@ -31,7 +31,7 @@ func ReadStruct(s interface{}, r io.Reader, o binary.ByteOrder) error {
 		return fmt.Errorf("ReadStruct(): s must be a struct. It is: %s\n", reflect.TypeOf(s))
 	}
 
-	fields := R.GetAllAddressableFields(s)
+	fields, _ := R.GetAllValues(s, R.FlagIsAddressable)
 
 	for i := range fields {
 		v := fields[i]

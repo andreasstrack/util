@@ -12,7 +12,7 @@ import (
 )
 
 func TestCanAddressAfterValueConversion(t *testing.T) {
-	tt := T.NewVerboseT(t)
+	tt := T.NewT(t)
 	var d interface{}
 	d = testData.NewD()
 	v := reflect.ValueOf(d).Elem().FieldByName("DI")
@@ -25,21 +25,21 @@ func TestCanAddressAfterValueConversion(t *testing.T) {
 func TestGetAllValues(t *testing.T) {
 	tt := T.NewT(t)
 	abbc := testData.NewAbbc()
-	values, tags := GetAllValuesWithFlags(abbc, FlagInheritTags)
+	values := GetAllValues(abbc, util.FlagNone)
 	tt.AssertEquals(19, len(values), "Number of values: %v", values)
-	tt.AssertEquals(19, len(values), "Number of tag lists: %v", tags)
-	tt.Assert(len(tags) >= 18, "Length of tags result.")
-	tt.Assert(len(tags[6]) >= 1, "Length of 6th tag result.")
-	tt.Assert(len(tags[18]) >= 2, "Length of 18th tag result.")
-	tt.AssertEquals("in", fmt.Sprintf("%s", tags[6][0]), "Tag 6.0")
-	tt.AssertEquals("out", fmt.Sprintf("%s", tags[18][1]), "Tag 18.1")
+	var tags []string
+	for i := range values {
+		tags = append(tags, fmt.Sprintf("%s", values[i].Tag))
+	}
+	tt.AssertEquals("in", fmt.Sprintf("%s", values[6].Tag), "Tag 6j")
+	tt.AssertEquals("out", fmt.Sprintf("%s", values[16].Tag), "Tag 16 (of %#v)", tags)
 }
 
 func TestGetAllSimpleDataFields(t *testing.T) {
 	tt := T.NewT(t)
 	b := testData.NewBifs()
 
-	allFields, _ := GetAllValuesWithFlags(*b, FlagIsSimpleData)
+	allFields := GetAllValues(*b, FlagIsSimpleData)
 
 	tt.AssertEquals(4, len(allFields), "len(allFields) for %s", b)
 
@@ -60,7 +60,7 @@ func TestGetAllAddressableFields(t *testing.T) {
 	tt := T.NewT(t)
 	b := testData.NewBifs()
 
-	allFields, _ := GetAllValuesWithFlags(b, FlagIsAddressable|FlagIsSimpleData)
+	allFields := GetAllValues(b, FlagIsAddressable|FlagIsSimpleData)
 
 	tt.AssertEquals(4, len(allFields), "len(allFields) (%s)", allFields)
 
@@ -85,34 +85,11 @@ func TestGetAddressableFieldsWithTag(t *testing.T) {
 	tt := T.NewT(t)
 	b := testData.NewBifs()
 
-	allFields, allTags := GetAllValuesWithFlags(b, FlagHasTag)
-	tt.AssertEquals(5, len(allFields), "len(allFields)")
-	tt.AssertEquals(len(allFields), len(allTags), "len(fields) = len(tags)")
-	tt.Assert(allTags != nil, "allFields: %s", allFields)
-	tt.Assert(allTags != nil, "allTags: %s", allTags)
-	tt.AssertEquals(len(allTags), len(allFields), "Every field shall have a tag.")
-	for i := range allTags {
-		tt.Assert(len(allTags[0]) > 0, "Check: tag %d not empty.", i)
-	}
-}
-
-func TestFlagInheritTags(t *testing.T) {
-	tt := T.NewT(t)
-	s := testData.NewAbbc()
-	{
-		values, tags := GetAllValuesWithFlags(s, util.FlagNone)
-		tt.AssertEquals(len(values), len(tags), "Check: Have all tags from abbc:\n%s\n", tags)
-		tt.Assert(len(tags) > 10 && len(tags[10]) == 0, "Check: Have no tags in index 10 abbc:\n%s\n", tags)
-		tt.Assert(len(tags) > 18 && len(tags[18]) == 0, "Check: Have no tags in index 18 abbc:\n%s\n", tags)
-	}
-
-	{
-		values, tags := GetAllValuesWithFlags(s, FlagInheritTags)
-		tt.AssertEquals(len(values), len(tags), "Check: Have all tags from abbc:\n%s\n", tags)
-		tt.Assert(len(tags) > 10 && len(tags[10]) > 0, "Check: Have tags in index 10 abbc:\n%s\n", tags)
-		tt.Assert(len(tags) > 18 && len(tags[18]) > 1, "Check: Have tags in index 18 abbc:\n%s\n", tags)
-		tt.Assert(tags[10][0] == "out", "Check: Have 'out' tag at index 10.0.")
-		tt.Assert(tags[18][1] == "out", "Check: Have 'out' tag at index 18.1.")
+	allValues := GetAllValues(b, FlagHasTag)
+	tt.AssertEquals(5, len(allValues), "len(allValues)")
+	tt.Assert(allValues != nil, "allValues: %s", allValues)
+	for i := range allValues {
+		tt.Assert(allValues[i].Tag != "", "Check: tag %d not empty (%s).", i, allValues[i].Tag)
 	}
 }
 
@@ -120,7 +97,7 @@ func TestFlagIncludeCannotInterface(t *testing.T) {
 	tt := T.NewT(t)
 	s := testData.NewCannotInterface()
 	{
-		values, _ := GetAllValuesWithFlags(s, FlagIsSimpleData)
+		values := GetAllValues(s, FlagIsSimpleData)
 		tt.AssertEquals(1, len(values), "Amount of values that can interface %s: %s\n", s, values)
 		for i := range values {
 			tt.Assert(values[i].CanInterface(), "Check if value %d can interface: %s\n", i, values[i])
@@ -128,7 +105,7 @@ func TestFlagIncludeCannotInterface(t *testing.T) {
 	}
 
 	{
-		values, _ := GetAllValuesWithFlags(s, FlagIsSimpleData|FlagIncludeCannotInterface)
+		values := GetAllValues(s, FlagIsSimpleData|FlagIncludeCannotInterface)
 		tt.AssertEquals(2, len(values), "Amount of values that can or cannot interface in %s: %s\n", s, values)
 	}
 }

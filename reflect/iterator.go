@@ -39,13 +39,6 @@ func NewValueIterator(i interface{}, flags util.Flags, traversalStrategy tree.Tr
 	return &vi, nil
 }
 
-// type valueBuildingChildIterator struct {
-// 	parent     tree.Node
-// 	next       tree.Node
-// 	fieldIndex int
-// 	v          reflect.Value
-// }
-
 func interfaceToValueNode(i interface{}) tree.Node {
 	v := reflect.ValueOf(i)
 	if v.Kind() == reflect.Ptr {
@@ -55,81 +48,22 @@ func interfaceToValueNode(i interface{}) tree.Node {
 	return result
 }
 
-// func NewValueBuildingChildIterator(n tree.Node) tree.ChildIterator {
-// 	fmt.Printf("NewValueBuildingChildIterator( %s )\n", tree.String(n))
-// 	ci := &valueBuildingChildIterator{}
-// 	ci.Init(n)
-// 	return ci
-// }
-
-// func (vbci *valueBuildingChildIterator) Init(n tree.Node) {
-// 	fmt.Printf("vbci.Init(%s, value: %s, interface: %s)\n", n, n.GetValue(), n.GetValue().Interface())
-// 	v := *n.GetValue().ReflectValue()
-// 	if v.Kind() == reflect.Ptr {
-// 		v = v.Elem()
-// 	}
-// 	if v.Kind() != reflect.Struct {
-// 		vbci.parent = nil
-// 		vbci.next = nil
-// 		return
-// 	}
-// 	vbci.parent = n
-// 	vbci.v = v
-// 	vbci.fieldIndex = 0
-// 	vbci.getNext()
-// }
-
-// func (vbci *valueBuildingChildIterator) getNext() {
-// 	if vbci.parent == nil {
-// 		vbci.next = nil
-// 		return
-// 	}
-// 	if vbci.v.Kind() != reflect.Struct {
-// 		vbci.next = nil
-// 		return
-// 	}
-// 	if vbci.fieldIndex >= vbci.v.NumField() {
-// 		vbci.next = nil
-// 		return
-// 	}
-// 	v := vbci.v.Field(vbci.fieldIndex)
-// 	sf := vbci.v.Type().Field(vbci.fieldIndex)
-// 	vbci.next = newValueNode(vbci.parent, v, &sf)
-// }
-
-// func (vbci *valueBuildingChildIterator) HasNext() bool {
-// 	return vbci.next != nil
-// }
-
-// func (vbci *valueBuildingChildIterator) Next() interface{} {
-// 	result := vbci.next
-// 	vbci.getNext()
-// 	return result
-// }
-
-// TODO: Optimize to store only parent and child index
-// for iterator performance? Or have both?
 type ValueNode struct {
 	tree.ValueNode
-	structField         reflect.StructField
-	tags                []reflect.StructTag
-	childrenInitialized bool
+	reflect.StructField
 }
 
 func (vn *ValueNode) String() string {
 	return fmt.Sprintf("%s", vn.ValueNode.String())
 }
 
-func newValueNode(parent tree.Node, v reflect.Value, tag *reflect.StructTag, flags util.Flags) *ValueNode {
-	vn := &ValueNode{ValueNode: *tree.NewValueNode(v), childrenInitialized: false, tags: make([]reflect.StructTag, 0)}
-
-	if flags.HasFlag(FlagInheritTags) && parent != nil {
-		pnv := parent.(*ValueNode)
-		vn.tags = append(vn.tags, pnv.tags...)
-
+func newValueNode(parent tree.Node, v reflect.Value, structField *reflect.StructField, flags util.Flags) *ValueNode {
+	vn := &ValueNode{ValueNode: *tree.NewValueNode(v)}
+	if structField != nil {
+		vn.StructField = *structField
 	}
-	if tag != nil && *tag != "" {
-		vn.tags = append(vn.tags, *tag)
+	if parent != nil {
+		parent.Add(vn)
 	}
 	return vn
 }
@@ -156,7 +90,7 @@ func (vnv valueNodeValidator) IsValid(n tree.Node) bool {
 	if !vn.CanInterface() {
 		valid = vnv.flags.HasFlag(FlagIncludeCannotInterface)
 	}
-	valid = valid && (!vnv.flags.HasFlag(FlagHasTag) || len(vn.tags) > 0)
+	valid = valid && (!vnv.flags.HasFlag(FlagHasTag) || vn.Tag != "")
 	valid = valid && (!vnv.flags.HasFlag(FlagIsSimpleData) || data.IsSimpleData(n.(data.Value)))
 	valid = valid && (!vnv.flags.HasFlag(FlagIsAddressable) || vn.CanAddr())
 	return valid
@@ -190,7 +124,7 @@ func (vci *valueChildIterator) getNext() tree.Node {
 	}
 	fv := vci.elementValue.Field(vci.nextIndex)
 	sf := vci.elementValue.Type().Field(vci.nextIndex)
-	child := newValueNode(vci.parent, fv, &sf.Tag, vci.flags)
+	child := newValueNode(vci.parent, fv, &sf, vci.flags)
 	vci.nextIndex++
 	return child
 }

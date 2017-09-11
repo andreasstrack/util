@@ -12,35 +12,17 @@ import (
 	"github.com/andreasstrack/util/patterns"
 )
 
-func GetAllValues(i interface{}) ([]reflect.Value, [][]reflect.StructTag) {
-	return GetAllValuesWithFlags(i, util.FlagNone)
-}
-
-// GetAllValuesWithFlags traverses the value tree of i and returns the values
+// GetAllValues traverses the value tree of i and returns the values
 // filtered by the given flags.
-func GetAllValuesWithFlags(i interface{}, flags util.Flags) ([]reflect.Value, [][]reflect.StructTag) {
-	var resultValues []reflect.Value
-	var resultTags [][]reflect.StructTag
+func GetAllValues(i interface{}, flags util.Flags) []*ValueNode {
+	var nodes []*ValueNode
 	if it, err := NewValueIterator(i, flags, tree.BreadthFirst); err == nil {
 		allAsInterface := patterns.GetAll(it)
 		for i := range allAsInterface {
-			resultValues = append(resultValues, *allAsInterface[i].(tree.Node).GetValue().ReflectValue())
-			resultTags = append(resultTags, allAsInterface[i].(*ValueNode).tags)
+			nodes = append(nodes, allAsInterface[i].(*ValueNode))
 		}
 	}
-	return resultValues, resultTags
-}
-
-// GetAllAddressableFields returns all values of the value tree fitting FlagIsSimpleData
-// and FlagIsAddressable.
-func GetAllAddressableSimpleDataFields(i interface{}) ([]reflect.Value, [][]reflect.StructTag) {
-	return GetAllValuesWithFlags(i, FlagIsSimpleData|FlagIsAddressable)
-}
-
-// GetAllAddressableFieldsWithTag returns all values of the value tree fitting FlagIsSimpleData,
-// FlagIsAddressable, and FlagHasTag.
-func GetAllAddressableFieldsWithInheritedTag(i interface{}, tag reflect.StructTag) ([]reflect.Value, [][]reflect.StructTag) {
-	return GetAllValuesWithFlags(i, FlagIsSimpleData|FlagIsAddressable|FlagHasTag|FlagInheritTags)
+	return nodes
 }
 
 // IsPointer returns whether i represents a pointer value or not.

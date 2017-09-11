@@ -6,6 +6,7 @@ import (
 	"github.com/andreasstrack/data"
 	"github.com/andreasstrack/data/tree"
 	"github.com/andreasstrack/util"
+	"github.com/andreasstrack/util/patterns"
 	"github.com/andreasstrack/util/reflect/testData"
 	T "github.com/andreasstrack/util/testing"
 )
@@ -21,24 +22,6 @@ func TestSimpleValueIteration(t *testing.T) {
 		tt.Assert(n != nil, "next node: %s", n)
 	}
 }
-
-// func TestValueTreeGeneration(t *testing.T) {
-// 	s := newAbbc()
-// 	vn, err := buildValueTree(s, 0)
-
-// 	if err != nil {
-// 		t.Error(err.Error())
-// 		return
-// 	} else if vn == nil {
-// 		t.Errorf("value tree is nil")
-// 		return
-// 	}
-
-// 	fmt.Printf("%s\n", vn.String())
-
-//	if vn.size() != 11 {
-// 		t.Errorf("size of value tree (%d) is not 11.", vn.size())
-// )
 
 func TestBreadthFirstTraversal(t *testing.T) {
 	tt := T.NewT(t)
@@ -80,6 +63,32 @@ func TestDepthFirstTraversal(t *testing.T) {
 	tt.Assert(nil == next, "it.Next() == nil (%s)", next)
 }
 
+func TestValueTree(t *testing.T) {
+	tt := T.NewT(t)
+	s := *testData.NewAbbc()
+	flags := util.FlagNone
+	it, err := NewValueIterator(s, flags, tree.BreadthFirst)
+	tt.AssertNoError(err, "NewValueIterator for %s", s)
+	tt.Assert(it.HasNext(), "Iterator has at least one value (%s).", it)
+	valuesFromIterator := patterns.GetAll(it)
+	root := valuesFromIterator[0]
+	var valuesFromTree []interface{}
+	queue := data.NewFifoQueue()
+	queue.Insert(root)
+	for !queue.IsEmpty() {
+		n := queue.Pop().(tree.Node)
+		valuesFromTree = append(valuesFromTree, n.(*ValueNode))
+		children := n.GetChildren()
+		for i := range children {
+			queue.Insert(children[i])
+		}
+	}
+	tt.AssertEquals(len(valuesFromIterator), len(valuesFromTree), "Amount of values from tree equals amount of values from iterator.")
+	for i := range valuesFromIterator {
+		tt.AssertEquals(valuesFromIterator[i].(*ValueNode), valuesFromTree[i].(*ValueNode), "Value %d from tree is equal to value from iterator.", i)
+	}
+}
+
 func TestTraversalWithTags(t *testing.T) {
 	tt := T.NewT(t)
 	s := *testData.NewAbbc()
@@ -90,8 +99,7 @@ func TestTraversalWithTags(t *testing.T) {
 		next := it.Next()
 		tt.Assert(next != nil, "it.Next() != nil (%s)", next)
 		nextValue := next.(*ValueNode)
-		tags := nextValue.tags
-		tt.Assert(len(tags) > 0, "nextValue %s has tag: %s", nextValue.GetValue().Interface(), tags)
+		tt.Assert(nextValue.Tag != "", "nextValue %s has tag: %s", nextValue.GetValue().Interface(), nextValue.Tag)
 	}
 	next := it.Next()
 	tt.Assert(nil == next, "it.Next() == nil (%s)", next)
@@ -124,8 +132,7 @@ func TestTraversalOfSimpleDataWithTags(t *testing.T) {
 		tt.Assert(next != nil, "it.Next() != nil (%s)", next)
 		nextValue := next.(*ValueNode)
 		tt.Assert(data.IsSimpleData(nextValue), "nextValue is simple data: %s", nextValue.GetValue())
-		tags := nextValue.tags
-		tt.Assert(len(tags) > 0, "nextValue %s has tag: %s", nextValue.GetValue().Interface(), tags)
+		tt.Assert(nextValue.Tag != "", "nextValue %s has tag: %s", nextValue.GetValue().Interface(), nextValue.Tag)
 	}
 	next := it.Next()
 	tt.Assert(nil == next, "it.Next() == nil (%s)", next)

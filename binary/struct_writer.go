@@ -29,7 +29,7 @@ func WriteStruct(s interface{}, w io.Writer, o binary.ByteOrder) error {
 		return errors.New("WriteStruct(): s must be a struct.")
 	}
 
-	fields := R.GetAllAddressableFields(s)
+	fields, _ := R.GetAllValues(s, R.FlagIsAddressable)
 
 	for i := range fields {
 		v := fields[i]
