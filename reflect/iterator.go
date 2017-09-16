@@ -51,6 +51,7 @@ func interfaceToValueNode(i interface{}) tree.Node {
 type ValueNode struct {
 	tree.ValueNode
 	reflect.StructField
+	FullyQualifiedName string
 }
 
 func (vn *ValueNode) String() string {
@@ -64,6 +65,9 @@ func newValueNode(parent tree.Node, v reflect.Value, structField *reflect.Struct
 	}
 	if parent != nil {
 		parent.Add(vn)
+		vn.FullyQualifiedName = parent.(*ValueNode).FullyQualifiedName + "." + vn.Name
+	} else {
+		vn.FullyQualifiedName = vn.Name
 	}
 	return vn
 }

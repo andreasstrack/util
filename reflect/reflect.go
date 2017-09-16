@@ -25,6 +25,23 @@ func GetAllValues(i interface{}, flags util.Flags) []*ValueNode {
 	return nodes
 }
 
+func GetSlice(slice interface{}) (*[]interface{}, error) {
+	v := GetElementValue(slice)
+	if v.Kind() != reflect.Slice || !v.CanAddr() {
+		return nil, fmt.Errorf("Need an addressable slice to initialize set, given value was %#v", slice)
+	}
+
+	var s []interface{}
+	for i := 0; i < v.Len(); i++ {
+		vi := v.Index(i)
+		if !vi.CanInterface() {
+			return nil, fmt.Errorf("Need a value that can interface at index %d of slice", i)
+		}
+		s = append(s, vi.Interface())
+	}
+	return &s, nil
+}
+
 // IsPointer returns whether i represents a pointer value or not.
 func IsPointer(i interface{}) bool {
 	return reflect.ValueOf(i).Kind() == reflect.Ptr

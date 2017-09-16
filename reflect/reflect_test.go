@@ -26,7 +26,7 @@ func TestGetAllValues(t *testing.T) {
 	tt := T.NewT(t)
 	abbc := testData.NewAbbc()
 	values := GetAllValues(abbc, util.FlagNone)
-	tt.AssertEquals(19, len(values), "Number of values: %v", values)
+	tt.AssertEquals(19, len(values), "Number of values: %#v", values)
 	var tags []string
 	for i := range values {
 		tags = append(tags, fmt.Sprintf("%s", values[i].Tag))
@@ -108,4 +108,21 @@ func TestFlagIncludeCannotInterface(t *testing.T) {
 		values := GetAllValues(s, FlagIsSimpleData|FlagIncludeCannotInterface)
 		tt.AssertEquals(2, len(values), "Amount of values that can or cannot interface in %s: %s\n", s, values)
 	}
+}
+
+func extractNames(values []*ValueNode) []string {
+	var names []string
+	for i := range values {
+		names = append(names, values[i].FullyQualifiedName)
+	}
+	return names
+}
+
+func TestFullyQualifiedNames(t *testing.T) {
+	tt := T.NewT(t)
+	s := testData.NewAbbc()
+	names := extractNames(GetAllValues(s, util.FlagNone))
+	tt.AssertEquals(19, len(names), "All names:\n%#v\n", names)
+	tt.AssertEquals(".AB.A.AI", names[7], "Name at index 7.")
+	tt.AssertEquals(".BC.B.E.D.DI", names[18], "Name at index 18.")
 }
